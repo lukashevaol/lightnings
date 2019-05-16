@@ -18,15 +18,16 @@ def posts_job():
 
 def posts_job_with_tags(*tags):
     for tag in tags:
-        r = requests.get(('http://localhost:5000/posts/update/%s' % tag))
-        if (r.status_code == 200):
-            return r.text
-        else:
-            return False
+        print(tag)
+        res = requests.get(('http://localhost:5000/posts/update/%s' % tag))
+        print(res.status_code)
+
 
 
 def main():
-    print(posts_job_with_tags("lightning", "lightnings", "молния", "молнии", "гроза", "thunderstorm"))
+
+    posts_job_with_tags("гроза")
+    # print(posts_job_with_tags("lightning", "lightnings", "молния", "молнии", "гроза", "thunderstorm"))
     # lightnings_job()
 
     # schedule.every().day.at('10:00').do(lightnings_job())

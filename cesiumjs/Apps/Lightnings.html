@@ -119,16 +119,18 @@
       $( '#cesiumContainer' ).removeClass( 'loading' );
     } );
 
+    function randomInteger(min, max) {
+      var rand = min - 0.5 + Math.random() * (max - min + 1)
+      rand = Math.round(rand);
+      return rand;
+    }
 
     function myFunction(arr) {
       var i;
       coors = [];
-      console.log(coors);
       for(i = 0; i < arr.length; i++) {
 
         var flag = coors.indexOf(arr[i].lng);
-
-        coors.push(arr[i].lng);
 
         var marker = markers.entities.add({
           position : Cesium.Cartesian3.fromDegrees(arr[i].lng, arr[i].lat),
@@ -140,13 +142,14 @@
         
 
         if ( flag > 0 ) {
-          marker.billboard.pixelOffset = new Cesium.Cartesian2(50, 20);
+          marker.billboard.pixelOffset = new Cesium.Cartesian2(randomInteger(50, 100), randomInteger(20, 80));
         };
-
 
         marker.postId = arr[i].id;
         marker.postLink = arr[i].shortcode;
         marker.postPhoto = arr[i].photo;
+
+        coors.push(arr[i].lng);
       };
     };
 

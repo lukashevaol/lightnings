@@ -33,9 +33,7 @@ class InstaScraper:
                 response.text,
             )
             data = json.loads(match.group(1))
-            print(data["entry_data"]["PostPage"][0]["graphql"]["shortcode_media"]["location"])
             if data["entry_data"]["PostPage"][0]["graphql"]["shortcode_media"]["location"] is not None:
-                print(data["entry_data"]["PostPage"][0]["graphql"]["shortcode_media"]["location"]["id"])
                 location_id = data["entry_data"]["PostPage"][0]["graphql"]["shortcode_media"]["location"]["id"]
                 location_ids[shortcode, src] = location_id
         return location_ids
