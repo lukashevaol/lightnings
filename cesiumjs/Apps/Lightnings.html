@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version. -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Lightnings</title>
+  <script src="../Build/Cesium/Cesium.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="style.css" media="all">
+
+  <style>
+    @import url(../Build/Cesium/Widgets/widgets.css);
+    html, body, #cesiumContainer {
+      width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay">
+    <div class="container"></div>
+  </div>
+  <div id="cesiumContainer"></div>
+  <script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyNmQzMWYwNS1hYjU5LTRlYjUtYjNlMi02YzIwMzk3MjZiZjgiLCJpZCI6MTA5NTAsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTc3NTM1MDR9.qadzc7ICTwIDuXn8s1jxpZ9K6rmqQmB04ITgLCnE8Nw';
+
+    var $overlay = $( '#overlay' );
+    $overlay.postId = null;
+    $overlay.postLink = null;
+    $overlay.postPhoto = null;
+
+
+    var extent = Cesium.Rectangle.fromDegrees(51.489588, 49.475105, 51.489588, 49.475105);
+
+    Cesium.Camera.DEFAULT_VIEW_RECTANGLE = extent;
+    Cesium.Camera.DEFAULT_VIEW_FACTOR = 2;
+
+
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+      imageryProvider : Cesium.createWorldImagery({
+        style : Cesium.IonWorldImageryStyle.AERIAL_WITH_LABELS
+      }),
+      baseLayerPicker : false
+    });
+
+    var layer = viewer.imageryLayers.addImageryProvider(
+      new Cesium.IonImageryProvider({ assetId: 3845 })
+      );
+
+    layer.alpha = 0.6;
+
+
+    viewer.scene.requestRenderMode = true;
+
+
+    function openOverlay ( args ) {
+
+      $overlay.find( '.container' ).html( 'Loading...' );
+      $overlay.addClass( 'loading' );
+      $overlay.addClass( 'active' );
+
+      $.ajax( {
+        url: '/ajax/overlay/',
+        type: 'POST',
+        data: { posts: args.postData },  
+        tryCount: 0,
+        retryLimit: 3,
+        dataType: 'json',
+        success: function ( response ) {
+
+          if ( response.html ) {
+            console.log('Response получен');
+            console.log(response.html)
+            $overlay.removeClass( 'loading' );
+            $overlay.find( '.container' ).html( response.html );
+            scene.requestRender();
+          }
+        },
+        error : function ( xhr, textStatus, errorThrown ) {
+
+          this.tryCount++;
+
+          if ( this.tryCount <= this.retryLimit ) {
+
+            console.log( 'Retrying...' );
+
+            $.ajax( this );
+
+            return;
+          }
+
+          alert( 'There was a problem with the connection. Please try again.' );
+        }
+      } );
+    }
+
+
+    var markers = new Cesium.CustomDataSource( 'markers' );
+
+    viewer.scene.preRender.addEventListener( function () {
+
+      var position;
+      if ( $overlay.markerId ) {
+        var marker = markers.entities.getById( $overlay.markerId );
+        position = marker.position.getValue();
+        console.log( 'Marker position:' );
+        console.log( marker.position.getValue() );
+        var canvasPosition = viewer.scene.cartesianToCanvasCoordinates( position );
+        $overlay.css( 'top', canvasPosition.y + 'px' );
+        $overlay.css( 'left', canvasPosition.x + 'px' );
+      }
+    });
+
+    viewer.scene.postRender.addEventListener( function () {
+
+      $( '#cesiumContainer' ).removeClass( 'loading' );
+    } );
+
+
+    function myFunction(arr) {
+      var i;
+      coors = [];
+      console.log(coors);
+      for(i = 0; i < arr.length; i++) {
+
+        var flag = coors.indexOf(arr[i].lng);
+
+        coors.push(arr[i].lng);
+
+        var marker = markers.entities.add({
+          position : Cesium.Cartesian3.fromDegrees(arr[i].lng, arr[i].lat),
+          billboard :{
+            image : '../marker.png',
+            scaleByDistance : new Cesium.NearFarScalar(1.5e1, 0.1, 1.5e6, 0.09)
+          }      
+        });  
+        
+
+        if ( flag > 0 ) {
+          marker.billboard.pixelOffset = new Cesium.Cartesian2(50, 20);
+        };
+
+
+        marker.postId = arr[i].id;
+        marker.postLink = arr[i].shortcode;
+        marker.postPhoto = arr[i].photo;
+      };
+    };
+
+
+    var x = new XMLHttpRequest();
+    var posts_list = [];
+    x.open("GET", "http://localhost:8080/posts", true);
+    x.onload = function (){
+      posts_list = JSON.parse(x.responseText);
+      myFunction(posts_list);
+    }
+    x.send();
+
+
+    viewer.dataSources.add(markers);
+
+    var scene = viewer.scene;
+    var clicks = 0;
+    viewer.screenSpaceEventHandler.removeInputAction( Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK );
+
+    var handler = new Cesium.ScreenSpaceEventHandler( scene.canvas );
+
+
+    handler.setInputAction( function ( movement ) {
+
+      console.log( "Click!" );
+      $overlay.removeClass( 'active' );
+
+      var pickedObject = scene.pick( movement.position );
+
+      if ( Cesium.defined( pickedObject ) ) {
+        clicks++;
+        if ( clicks == 1 ) {
+
+          //Single click
+
+          timer = setTimeout( function () {
+
+            console.log( 'Single click' );
+            var overlayArgs = { postData: {} };
+            if ( markers.entities.contains( pickedObject.id ) ) {
+
+              // Clicked on Marker
+
+              overlayArgs.postData.id = pickedObject.id.postId;
+              overlayArgs.postData.link = pickedObject.id.postLink;
+              overlayArgs.postData.photo = pickedObject.id.postPhoto;
+
+              $overlay.postId = pickedObject.id.postId;
+              $overlay.postLink = pickedObject.id.postLink;
+              $overlay.markerId = pickedObject.id.id;
+
+            } 
+
+            if ( !$.isEmptyObject( overlayArgs.postData ) ) {
+
+              scene.requestRender();
+              openOverlay( overlayArgs );
+            }
+            clicks = 0;
+
+          }, 500 );
+        }
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+  </script>
+</body>
+</html>
