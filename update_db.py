@@ -46,6 +46,8 @@ def add_posts(tag='olyadelaetproektpodd'):
     with session_scope() as s:
         posts = scraper.appropriate_posts()
         if len(posts) > 0:
+            print('Checking if some of them are already in db...')
+            count = 0
             for el in posts:
                 exists = (s.query
                           (s.query(Post.id).filter_by(shortcode=el[0]).exists())
@@ -57,8 +59,8 @@ def add_posts(tag='olyadelaetproektpodd'):
                     post.lat = el[2]
                     post.lng = el[3]
                     s.add(post)
-                else:
-                    print("This post is already in db")
+                    count += 1
+            print('Added to db {} posts'.format(count))
             return "Updated posts table"
         else:
             return "Nothing to add in table"
