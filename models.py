@@ -4,32 +4,38 @@ from datetime import datetime
 import pytz
 
 Base = declarative_base()
+u = datetime.utcnow()
+u = u.replace(tzinfo=pytz.utc)
 
 
 class Coordinate(Base):
+    '''
+    Contains lightnings info: area, time, number of lightnings
+    '''
     __tablename__ = 'coordinates'
     id = Column(Integer, primary_key=True)
-    p1t = Column(String)
-    p1n = Column(String)
-    p2t = Column(String)
-    p2n = Column(String)
-    p3t = Column(String)
-    p3n = Column(String)
-    p4t = Column(String)
-    p4n = Column(String)
-    DS = Column(DateTime)
-    DE = Column(DateTime)
-    cnt = Column(String)
-    u = datetime.utcnow()
-    u = u.replace(tzinfo=pytz.utc)
-    SaveDate = Column(DateTime, default=u)
+    first_point_lat = Column(String)
+    first_point_lng = Column(String)
+    second_point_lat = Column(String)
+    second_point_lng = Column(String)
+    third_point_lat = Column(String)
+    third_point_lng = Column(String)
+    fourth_point_lat = Column(String)
+    fourth_point_lng = Column(String)
+    start_date = Column(DateTime)
+    end_date = Column(DateTime)
+    count = Column(String)
+    save_date = Column(DateTime, default=u)
 
     def __repr__(self):
-        return "<Coordinate(id='{}', p1t='{}', SaveDate={})>" \
-            .format(self.id, self.p1t, self.SaveDate)
+        return "<Coordinate(id='{}', SaveDate={})>" \
+            .format(self.id, self.save_date)
 
 
 class Post(Base):
+    '''
+    Contains post info: shortcode, photo link, coordinates
+    '''
     __tablename__ = 'posts'
     id = Column(Integer, primary_key=True)
     shortcode = Column(String)

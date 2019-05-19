@@ -1,14 +1,12 @@
-import schedule
-import time
 import requests
 
 
-def lightnings_job():
+def update_lightnings():
     requests.get('http://localhost:5000/lightnings/update')
     print("did lightnings update")
 
 
-def posts_job():
+def update_posts():
     r = requests.get('http://localhost:5000/posts/update')
     if (r.status_code == 200):
         return r.text
@@ -16,7 +14,7 @@ def posts_job():
         return False
 
 
-def posts_job_with_tags(*tags):
+def update_posts_by_tags(*tags):
     for tag in tags:
         print('Searching for {} tag started'.format(tag))
         res = requests.get(('http://localhost:5000/posts/update/%s' % tag))
@@ -24,8 +22,8 @@ def posts_job_with_tags(*tags):
 
 
 def main():
-    lightnings_job()
-    posts_job_with_tags("lightnings")
+    update_lightnings()
+    update_posts_by_tags("thunder", "lightning")
 
 
 if __name__ == '__main__':

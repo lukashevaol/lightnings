@@ -2,13 +2,16 @@ import requests
 import json
 from db_manager import session_scope
 from models import Coordinate, Post
-from instagram.instagram_work import InstaScraper
+from instagram.instagram_scraper import InstaScraper
 import sys
 
 sys.path.append('../')
 
 
 def add_lightnings():
+    '''
+    Adds lightnings data from lightnings.ru to db
+    '''
     r = requests.get('http://www.lightnings.ru/vr44_24.php?LA=53&LO=38')
     data = json.loads(r.text.replace("rs", "\"rs\""))
     coors = data['rs']
@@ -16,32 +19,39 @@ def add_lightnings():
     with session_scope() as s:
         for coor in coors:
             coordinate = Coordinate()
-            coordinate.p1t = coor['p1t']
-            coordinate.p1n = coor['p1n']
-            coordinate.p2t = coor['p2t']
-            coordinate.p2n = coor['p2n']
-            coordinate.p3t = coor['p3t']
-            coordinate.p3n = coor['p3n']
-            coordinate.p4t = coor['p4t']
-            coordinate.p4n = coor['p4n']
+            coordinate.first_point_lat = coor['p1t']
+            coordinate.first_point_lng = coor['p1n']
+            coordinate.second_point_lat = coor['p2t']
+            coordinate.second_point_lng = coor['p2n']
+            coordinate.third_point_lat = coor['p3t']
+            coordinate.third_point_lng = coor['p3n']
+            coordinate.fourth_point_lat = coor['p4t']
+            coordinate.fourth_point_lng = coor['p4n']
             coordinate.cnt = coor['cnt']
-            coordinate.DS = coor['DS']
-            coordinate.DE = coor['DE']
+            coordinate.start_date = coor['DS']
+            coordinate.end_date = coor['DE']
             s.add(coordinate)
     return "Updated lightnings db"
 
 
 def get_lightnings(lat, lng):
+    '''
+    Checks if there are lightnings with these coordinates in db
+    '''
     with session_scope() as s:
-        lightning_coors = s.query(Coordinate).filter(Coordinate.p1t >= lat).filter(Coordinate.p2t <= lat). \
-            filter(Coordinate.p1n >= lng).filter(Coordinate.p3n < lng).all()
+        lightning_coors = s.query(Coordinate).filter(Coordinate.first_point_lat >= lat).filter(
+            Coordinate.second_point_lat <= lat). \
+            filter(Coordinate.first_point_lng >= lng).filter(Coordinate.third_point_lng < lng).all()
         if len(lightning_coors) > 0:
             return "1"
         else:
             return "0"
 
 
-def add_posts(tag='olyadelaetproektpodd'):
+def add_posts(tag='lightnings'):
+    '''
+    Adds posts to db
+    '''
     scraper = InstaScraper(tag)
     with session_scope() as s:
         posts = scraper.appropriate_posts()
