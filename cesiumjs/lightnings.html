@@ -24,33 +24,10 @@
   <div id="cesiumContainer"></div>
 
   <script>
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyNmQzMWYwNS1hYjU5LTRlYjUtYjNlMi02YzIwMzk3MjZiZjgiLCJpZCI6MTA5NTAsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTc3NTM1MDR9.qadzc7ICTwIDuXn8s1jxpZ9K6rmqQmB04ITgLCnE8Nw';
-
-    var extent = Cesium.Rectangle.fromDegrees(51.489588, 49.475105, 51.489588, 49.475105);
-    Cesium.Camera.DEFAULT_VIEW_RECTANGLE = extent;
-    Cesium.Camera.DEFAULT_VIEW_FACTOR = 2;
-
-    var viewer = new Cesium.Viewer('cesiumContainer', {
-      imageryProvider : Cesium.createWorldImagery({
-        style : Cesium.IonWorldImageryStyle.AERIAL_WITH_LABELS
-      }),
-      baseLayerPicker : false
-    });
-
-    var layer = viewer.imageryLayers.addImageryProvider(
-      new Cesium.IonImageryProvider({ assetId: 3845 })
-      );
-
-    layer.alpha = 0.6;
-
-    viewer.scene.requestRenderMode = true;
-
-    var $overlay = $( '#overlay' );
-    $overlay.postId = null;
-    $overlay.postLink = null;
-    $overlay.postPhoto = null;
 
     function openOverlay ( args ) {
+
+      /* Loads html overlay */
 
       $overlay.find( '.container' ).html( 'Loading...' );
       $overlay.addClass( 'loading' );
@@ -97,6 +74,9 @@
     }
 
     function setMarkers(arr) {
+
+      /* Sets markers to their positions */
+
       var i;
       coors = [];
       for(i = 0; i < arr.length; i++) {
@@ -122,8 +102,38 @@
 
         coors.push(arr[i].lng);
       };
-    };
+    };    
 
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyNmQzMWYwNS1hYjU5LTRlYjUtYjNlMi02YzIwMzk3MjZiZjgiLCJpZCI6MTA5NTAsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTc3NTM1MDR9.qadzc7ICTwIDuXn8s1jxpZ9K6rmqQmB04ITgLCnE8Nw';
+
+    /* Set default camera view */
+    var extent = Cesium.Rectangle.fromDegrees(51.489588, 49.475105, 51.489588, 49.475105);
+    Cesium.Camera.DEFAULT_VIEW_RECTANGLE = extent;
+    Cesium.Camera.DEFAULT_VIEW_FACTOR = 2;
+
+    /* Create viewer */
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+      imageryProvider : Cesium.createWorldImagery({
+        style : Cesium.IonWorldImageryStyle.AERIAL_WITH_LABELS
+      }),
+      baseLayerPicker : false
+    });
+
+    /* Set imagery layer */
+    var layer = viewer.imageryLayers.addImageryProvider(
+      new Cesium.IonImageryProvider({ assetId: 3845 })
+      );
+
+    layer.alpha = 0.6;
+
+    viewer.scene.requestRenderMode = true;
+
+    var $overlay = $( '#overlay' );
+    $overlay.postId = null;
+    $overlay.postLink = null;
+    $overlay.postPhoto = null;
+
+    /* Load markers list and set them on map */
     var markers = new Cesium.CustomDataSource( 'markers' );
     var x = new XMLHttpRequest();
     var posts_list = [];
@@ -135,6 +145,7 @@
     x.send();
     viewer.dataSources.add(markers);
 
+    /* Make overlays following their markers position*/
     viewer.scene.preRender.addEventListener( function () {
 
       var position;
@@ -152,6 +163,7 @@
       $( '#cesiumContainer' ).removeClass( 'loading' );
     } );
 
+    /* Make overlay open by click on marker */
     var scene = viewer.scene;
     var clicks = 0;
     viewer.screenSpaceEventHandler.removeInputAction( Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK );
@@ -169,15 +181,11 @@
         clicks++;
         if ( clicks == 1 ) {
 
-          //Single click
-
           timer = setTimeout( function () {
 
             console.log( 'Single click' );
             var overlayArgs = { postData: {} };
             if ( markers.entities.contains( pickedObject.id ) ) {
-
-              // Clicked on Marker
 
               overlayArgs.postData.id = pickedObject.id.postId;
               overlayArgs.postData.link = pickedObject.id.postLink;
